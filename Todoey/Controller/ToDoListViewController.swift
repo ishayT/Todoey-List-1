@@ -5,7 +5,6 @@
 //  Created by Matan Dahan on 11/02/2018.
 //  Copyright © 2018 Matan Dahan. All rights reserved.
 //
-//
 
 import UIKit
 
@@ -115,7 +114,7 @@ class ToDoListViewController: UITableViewController {
             let data = try Data(contentsOf: dataFilePath!)
             let decoder : PropertyListDecoder = PropertyListDecoder()
             
-            // This is the method that decodes out data,
+            // This is the method that decodes our data,
             // we have to specify what is the data type of the doceded value.
             // Out data is Array of Item [Item]. we have to add the .self
             // so it will know that we are referring to out Item type and not an Object
