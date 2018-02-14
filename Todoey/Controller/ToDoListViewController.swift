@@ -10,10 +10,34 @@ import UIKit
 
 class ToDoListViewController: UITableViewController {
 
-    var itemArray : [String] = ["Shoshana", "Damari", "Ofra Haza"]
+    var itemArray : [Item] = [Item]()
+    
+    // Setting the refrence to UserDefaults
+    let defaults = UserDefaults.standard
+    
+    var dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Shoshana.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        print(path!)
+        
+        let newItem : Item = Item()
+        newItem.title = "Liraz"
+        itemArray.append(newItem)
+        
+        let newItem2 : Item = Item()
+        newItem2.title = "David"
+        itemArray.append(newItem2)
+        
+        let newItem3 : Item = Item()
+        newItem3.title = "Matan"
+        itemArray.append(newItem3)
+        
+        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
+            itemArray = items
+        }
     }
     
     //MARK: Tableview Datasource Methods
@@ -23,8 +47,17 @@ class ToDoListViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "toDoItemCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        
+        let item : Item = itemArray[indexPath.row]
+        
+        // Because the itemArray is now an Item and not a String
+        cell.textLabel?.text = item.title
+        
+        // Ternary Operator
+        cell.accessoryType = item.done ? .checkmark : .none
+        
         return cell
     }
     
@@ -33,17 +66,14 @@ class ToDoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         print("\(itemArray[indexPath.row]) at Row: \(indexPath.row)")
         
-        // Add Checkbox to the selected cell
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
+        tableView.reloadData()
         
         // Change Appearance of selected row
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
     //MARK: Add new items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -62,9 +92,14 @@ class ToDoListViewController: UITableViewController {
         
         // Create action to alert
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+            
             // What will happen when the user clicks on the Add button
-            self.itemArray.append(textField.text!)
-            print(self.itemArray)
+            let newItem : Item = Item()
+            newItem.title = textField.text!
+            self.itemArray.append(newItem)
+            
+            // Saving to UserDefaults
+            self.defaults.set(self.itemArray, forKey: "TodoListArray")
             
             // Load the data we added to the tableview
             self.tableView.reloadData()
