@@ -12,35 +12,16 @@ class ToDoListViewController: UITableViewController {
 
     var itemArray : [Item] = [Item]()
     
-    // Setting the refrence to UserDefaults
-    let defaults = UserDefaults.standard
-    
-    var dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Shoshana.plist")
+    // Creating a Codable plist file Path
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Shoshana.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
-        print(path!)
-        
-        let newItem : Item = Item()
-        newItem.title = "Liraz"
-        itemArray.append(newItem)
-        
-        let newItem2 : Item = Item()
-        newItem2.title = "David"
-        itemArray.append(newItem2)
-        
-        let newItem3 : Item = Item()
-        newItem3.title = "Matan"
-        itemArray.append(newItem3)
-        
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = items
-        }
+        loadItems()
     }
     
-    //MARK: Tableview Datasource Methods
+    //MARK: - Tableview Datasource Methods
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
@@ -61,12 +42,14 @@ class ToDoListViewController: UITableViewController {
         return cell
     }
     
-    //MARK: Tableview Delegate Methods
+    //MARK: - Tableview Delegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         print("\(itemArray[indexPath.row]) at Row: \(indexPath.row)")
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        
+        saveItems()
         
         tableView.reloadData()
         
@@ -74,7 +57,7 @@ class ToDoListViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    //MARK: Add new items
+    //MARK: - Add new items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         
@@ -98,8 +81,7 @@ class ToDoListViewController: UITableViewController {
             newItem.title = textField.text!
             self.itemArray.append(newItem)
             
-            // Saving to UserDefaults
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+            self.saveItems()
             
             // Load the data we added to the tableview
             self.tableView.reloadData()
@@ -110,4 +92,44 @@ class ToDoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
+    //MARK: - Model manipulation Methods
+    
+    func saveItems() {
+        
+        // Create an Encoder
+        let encoder : PropertyListEncoder = PropertyListEncoder()
+        do {
+            // Encoding the Arraylist to a dictionary plist file
+            let data = try encoder.encode(itemArray)
+            
+            // Writing our to a data custom file
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("Error saving item array: \(error)")
+        }
+    }
+    
+    func loadItems() {
+        do {
+            let data = try Data(contentsOf: dataFilePath!)
+            let decoder : PropertyListDecoder = PropertyListDecoder()
+            
+            // This is the method that decodes out data,
+            // we have to specify what is the data type of the doceded value.
+            // Out data is Array of Item [Item]. we have to add the .self
+            // so it will know that we are referring to out Item type and not an Object
+            itemArray = try decoder.decode([Item].self, from: data)
+        } catch {
+            print("Error decoding item Array : \(error)")
+        }
+        
+//        if let dataTwo = try? Data(contentsOf: dataFilePath!) {
+//            let decoderTwo : PropertyListDecoder = PropertyListDecoder()
+//            do {
+//                itemArray = try decoderTwo.decode([Item].self, from: dataTwo)
+//            } catch {
+//                print("Error decoding Item Array: \(error)")
+//            }
+//        }
+    }
 }
