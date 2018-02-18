@@ -55,11 +55,11 @@ class ToDoListViewController: UITableViewController {
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
-        //Deleting from the database
-        context.delete(itemArray[indexPath.row])
-        
-        //Deleting from the UI List
-        itemArray.remove(at: indexPath.row)
+//        //Deleting from the database
+//        context.delete(itemArray[indexPath.row])
+//        
+//        //Deleting from the UI List
+//        itemArray.remove(at: indexPath.row)
         
         saveItems()
         
@@ -116,13 +116,34 @@ class ToDoListViewController: UITableViewController {
         }
     }
     
-    func loadItems() {
+    // this function is asking for q request, if you don't give her any request
+    // it will get the default paramenter we gave it.
+    func loadItems(with request : NSFetchRequest<Item> = Item.fetchRequest()) {
         // You have to specify the data type of the request and the Entity type.
-        let request : NSFetchRequest<Item> = Item.fetchRequest()
         do {
             itemArray = try context.fetch(request)
         } catch {
             print("Error Fetching Data from context: \(error)")
         }
+        tableView.reloadData()
     }
+    
+}
+
+//MARK: - SearchBar Delegate Methods
+
+extension ToDoListViewController : UISearchBarDelegate {
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+
+        // sortDescriptor - it wants an array of sortDescriptors
+        // but we only have one so we wrap it in an array.
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+
+        loadItems(with: request)
+    }
+    
 }
