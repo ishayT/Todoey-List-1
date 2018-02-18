@@ -135,15 +135,31 @@ class ToDoListViewController: UITableViewController {
 extension ToDoListViewController : UISearchBarDelegate {
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        let request : NSFetchRequest<Item> = Item.fetchRequest()
-        
-        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-
-        // sortDescriptor - it wants an array of sortDescriptors
-        // but we only have one so we wrap it in an array.
-        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-
-        loadItems(with: request)
+        if searchBar.text?.count != 0 {
+            let request : NSFetchRequest<Item> = Item.fetchRequest()
+            
+            request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+            
+            // sortDescriptor - it wants an array of sortDescriptors
+            // but we only have one so we wrap it in an array.
+            request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+            
+            loadItems(with: request)
+        }
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchText.isEmpty{
+            
+            // Going into the main thread and activating the function that
+            // make the keyboard disapear Asynchronised.
+            // that way you don't need to wait for the Threads to finish
+            // and wait for the queue.
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+            loadItems()
+        }
     }
     
 }
