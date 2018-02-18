@@ -8,8 +8,12 @@
 //
 
 import UIKit
+import CoreData
 
 class ToDoListViewController: UITableViewController {
+    
+    // Create the context from AppDelegate Singleton
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     var itemArray : [Item] = [Item]()
     
@@ -20,6 +24,7 @@ class ToDoListViewController: UITableViewController {
         super.viewDidLoad()
         
         loadItems()
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
     }
     
     //MARK: - Tableview Datasource Methods
@@ -50,6 +55,12 @@ class ToDoListViewController: UITableViewController {
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
+        //Deleting from the database
+        context.delete(itemArray[indexPath.row])
+        
+        //Deleting from the UI List
+        itemArray.remove(at: indexPath.row)
+        
         saveItems()
         
         tableView.reloadData()
@@ -78,8 +89,9 @@ class ToDoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             
             // What will happen when the user clicks on the Add button
-            let newItem : Item = Item()
+            let newItem : Item = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
             self.itemArray.append(newItem)
             
             self.saveItems()
@@ -97,40 +109,20 @@ class ToDoListViewController: UITableViewController {
     
     func saveItems() {
         
-        // Create an Encoder
-        let encoder : PropertyListEncoder = PropertyListEncoder()
         do {
-            // Encoding the Arraylist to a dictionary plist file
-            let data = try encoder.encode(itemArray)
-            
-            // Writing our to a data custom file
-            try data.write(to: dataFilePath!)
+            try context.save()
         } catch {
-            print("Error saving item array: \(error)")
+            print("Error saving context: \(error)")
         }
     }
     
     func loadItems() {
+        // You have to specify the data type of the request and the Entity type.
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
         do {
-            let data = try Data(contentsOf: dataFilePath!)
-            let decoder : PropertyListDecoder = PropertyListDecoder()
-            
-            // This is the method that decodes our data,
-            // we have to specify what is the data type of the doceded value.
-            // Out data is Array of Item [Item]. we have to add the .self
-            // so it will know that we are referring to out Item type and not an Object
-            itemArray = try decoder.decode([Item].self, from: data)
+            itemArray = try context.fetch(request)
         } catch {
-            print("Error decoding item Array : \(error)")
+            print("Error Fetching Data from context: \(error)")
         }
-        
-//        if let dataTwo = try? Data(contentsOf: dataFilePath!) {
-//            let decoderTwo : PropertyListDecoder = PropertyListDecoder()
-//            do {
-//                itemArray = try decoderTwo.decode([Item].self, from: dataTwo)
-//            } catch {
-//                print("Error decoding Item Array: \(error)")
-//            }
-//        }
     }
 }
