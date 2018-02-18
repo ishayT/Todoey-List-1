@@ -12,6 +12,12 @@ import CoreData
 
 class ToDoListViewController: UITableViewController {
     
+    var selectedCategory : Category? {
+        didSet {
+            loadItems()
+        }
+    }
+    
     // Create the context from AppDelegate Singleton
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
@@ -23,7 +29,6 @@ class ToDoListViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        loadItems()
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
     }
     
@@ -92,6 +97,7 @@ class ToDoListViewController: UITableViewController {
             let newItem : Item = Item(context: self.context)
             newItem.title = textField.text!
             newItem.done = false
+            newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
             
             self.saveItems()
@@ -114,11 +120,21 @@ class ToDoListViewController: UITableViewController {
         } catch {
             print("Error saving context: \(error)")
         }
+        
+        tableView.reloadData()
     }
     
     // this function is asking for q request, if you don't give her any request
     // it will get the default paramenter we gave it.
-    func loadItems(with request : NSFetchRequest<Item> = Item.fetchRequest()) {
+    func loadItems(with request : NSFetchRequest<Item> = Item.fetchRequest(), itemPredicate : NSPredicate? = nil) {
+        
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        if let additionalPredicate = itemPredicate {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        } else {
+            request.predicate = categoryPredicate
+        }
+        
         // You have to specify the data type of the request and the Entity type.
         do {
             itemArray = try context.fetch(request)
@@ -138,13 +154,13 @@ extension ToDoListViewController : UISearchBarDelegate {
         if searchBar.text?.count != 0 {
             let request : NSFetchRequest<Item> = Item.fetchRequest()
             
-            request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+            let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
             
             // sortDescriptor - it wants an array of sortDescriptors
             // but we only have one so we wrap it in an array.
             request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
             
-            loadItems(with: request)
+            loadItems(with: request, itemPredicate: predicate)
         }
     }
     
@@ -161,5 +177,5 @@ extension ToDoListViewController : UISearchBarDelegate {
             loadItems()
         }
     }
-    //
+    
 }
