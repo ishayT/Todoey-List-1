@@ -10,6 +10,9 @@ import UIKit
 import CoreData
 
 class CategoryViewControllerTableViewController: UITableViewController {
+    
+    
+    // i am the king of the castle!!!
 
     var categories : [Category] = [Category]()
     
